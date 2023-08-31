@@ -1,0 +1,81 @@
+#!/usr/bin/python3
+import argparse
+from pathlib import Path
+
+
+def generate_clients_template(n: int, base: int):
+    template = """\
+  client{client_id}:
+    container_name: client{client_id}
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID={client_id}
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
+"""
+
+    clients = ""
+    for i in range(base+1, base+n+1):
+
+        clients += template.format(client_id=i) + "\n"
+
+    return clients
+
+
+def add_clients_to_file(clients: int, filepath: str):
+    current_clients = 0
+    last_client_position = 0
+    filepath = Path(filepath).resolve()
+
+    with filepath.open("r+") as docker_compose_file:
+
+        for line in docker_compose_file:
+            last_client_position += len(line)
+
+            if line.startswith("  client"):
+                current_clients += 1
+
+            elif line.startswith("networks:"):
+                docker_compose_file.seek(last_client_position - len(line))
+                network = docker_compose_file.read()
+                docker_compose_file.seek(last_client_position - len(line))
+                break
+
+        docker_compose_file.writelines(
+            generate_clients_template(clients, current_clients))
+        docker_compose_file.writelines(network)
+
+        docker_compose_file.close()
+
+    return
+
+
+def define_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--clients',
+                        dest='clients',
+                        help='number of clients',
+                        required=True,
+                        type=int)
+    parser.add_argument('-f', '--filepath',
+                        dest='filepath',
+                        help='path to docker compose file',
+                        required=True,
+                        type=str)
+    return parser
+
+
+def main():
+    parser = define_arguments()
+    args = parser.parse_args()
+
+    add_clients_to_file(args.clients, args.filepath)
+    return
+
+
+if __name__ == '__main__':
+    main()
