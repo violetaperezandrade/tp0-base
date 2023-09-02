@@ -41,6 +41,12 @@ services:
     depends_on:
       - server
 
+  netcat:
+    container_name: netcat
+    image: netcat:latest
+    networks:
+      - testing_net
+
 networks:
   testing_net:
     ipam:
