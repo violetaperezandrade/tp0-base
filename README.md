@@ -1,20 +1,17 @@
 # TP0: Docker + Comunicaciones + Concurrencia
-### Ejercicio N°1.1:
-Definir un script (en el lenguaje deseado) que permita crear una definición de DockerCompose con una cantidad configurable de clientes.
+### Ejercicio N°2:
+Modificar el cliente y el servidor para lograr que realizar cambios en el archivo de configuración no requiera un nuevo build de las imágenes de Docker para que los mismos sean efectivos. La configuración a través del archivo correspondiente (`config.ini` y `config.yaml`, dependiendo de la aplicación) debe ser inyectada en el container y persistida afuera de la imagen (hint: `docker volumes`).
 
-### Requerimentos:
--Se requiere tener Python3 instalado para correr el script.
-### Para correrlo:
+Para correr, se debe primero correr buildeando las imagenes
 
 ```console
-$ cd scripts
-$ chmod +x generate_docker_compose
-$ ./generate_docker_compose [-h] [-n CLIENTS] [-f FILEPATH]
+$ make docker-compose-up
 ```
 
-Donde:
-- `-h`: Mostrar la ayuda
-- `-n`: La cantidad de clientes que se desean agregar
-- `-f`: Ruta al archivo docker compose
+Luego, cambiar algun archivo de confiuracion, como ``server/config.ini`` o ``client/config.yaml`` y volver a correr pero sin buildear mediante
 
-El script sobreescribe el archivo original y asume que hay al menos un cliente
+```console
+$ docker compose -f docker-compose-dev.yaml up
+```
+
+y verificar que impacten los cambios hechos en el archivo de configuracion
