@@ -1,10 +1,16 @@
 # TP0: Docker + Comunicaciones + Concurrencia
-### Ejercicio N°3:
-Crear un script que permita verificar el correcto funcionamiento del servidor utilizando el comando `netcat` para interactuar con el mismo. Dado que el servidor es un EchoServer, se debe enviar un mensaje al servidor y esperar recibir el mismo mensaje enviado. Netcat no debe ser instalado en la máquina _host_ y no se puede exponer puertos del servidor para realizar la comunicación (hint: `docker network`).
+### Ejercicio N°4:
+Modificar servidor y cliente para que ambos sistemas terminen de forma _graceful_ al recibir la signal SIGTERM. Terminar la aplicación de forma _graceful_ implica que todos los _file descriptors_ (entre los que se encuentran archivos, sockets, threads y procesos) deben cerrarse correctamente antes que el thread de la aplicación principal muera. Loguear mensajes en el cierre de cada recurso (hint: Verificar que hace el flag `-t` utilizado en el comando `docker compose down`).
 
-Para ejecutar la prueba se debe correr
+Para ejecutar se debe correr
 
 ```console
 $ make docker-compose-up
-$ docker exec netcat /netcat_script.sh
+$ make docker-compose-logs
 ```
+Luego, en otra terminal correr
+```console
+$ make docker-compose-down
+```
+
+Y en la primera terminal se podra ver como tanto el cliente como el servidor terminan de forma _graceful_
