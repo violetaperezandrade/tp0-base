@@ -2,6 +2,11 @@ import socket
 import logging
 import signal
 
+from protocol.protocol import decode
+from .utils import store_bets
+
+ACK = 1
+
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -43,17 +48,32 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
+
+            header = self.__read_exact(2, client_sock)
+            payload = self.__read_exact(int.from_bytes(
+                header, byteorder='big'), client_sock)
+
+            bet = decode(payload)
+            store_bets([bet])
             addr = client_sock.getpeername()
             logging.info(
-                f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+                f'action: apuesta_enviada | result: success | ip: {addr[0]} | dni: {bet.document} | numero: {bet.number}')
             # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            client_sock.send(ACK.to_bytes(1, byteorder='big'))
         except OSError as e:
             logging.error(
                 "action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
+
+    def __read_exact(self, bytes_to_read, client_sock):
+        bytes_read = client_sock.recv(bytes_to_read)
+
+        while len(bytes_read) != bytes_to_read:
+            new_bytes_read = client_sock.recv(bytes_to_read - len(bytes_read))
+            bytes_read += new_bytes_read
+
+        return bytes_read
 
     def __accept_new_connection(self):
         """
