@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -106,18 +108,31 @@ func main() {
 		ID:            v.GetString("id"),
 		LoopLapse:     v.GetDuration("loop.lapse"),
 		LoopPeriod:    v.GetDuration("loop.period"),
+		Agency:        os.Getenv("CLI_ID"),
+		Dni:           os.Getenv("DOCUMENTO"),
+		Number:        os.Getenv("NUMERO"),
+		BirthDate:     os.Getenv("NACIMIENTO"),
+		FirstName:     os.Getenv("NOMBRE"),
+		LastName:      os.Getenv("APELLIDO"),
 	}
 
 	client := common.NewClient(clientConfig)
+	agency, _ := strconv.Atoi(clientConfig.Agency)
+	birthdate := clientConfig.BirthDate
+	year, _ := strconv.Atoi(birthdate[1:5])
+	month, _ := strconv.Atoi(birthdate[6:8])
+	day, _ := strconv.Atoi(birthdate[9:11])
+	dni, _ := strconv.Atoi(clientConfig.Dni)
+	number, _ := strconv.Atoi(clientConfig.Number)
 	bet := bet.Bet{
-		Agency:    1,
-		Dni:       41151395,
-		Number:    6284,
-		Year:      1998,
-		Month:     5,
-		Day:       15,
-		FirstName: "Violeta",
-		LastName:  "Perez Andrade",
+		Agency:    agency,
+		Dni:       dni,
+		Number:    number,
+		Year:      year,
+		Month:     int(month),
+		Day:       day,
+		FirstName: clientConfig.FirstName,
+		LastName:  clientConfig.LastName,
 	}
 	client.Send(&bet)
 }

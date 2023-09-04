@@ -25,16 +25,22 @@ El cliente envia:
 - 1 byte indicando el codigo de operacion
 
 Código de operacion 1 --> enviar una apuesta:
-    - 1 byte agencia
-    - 4 bytes dni
-    - 2 bytes numero
-    - 2 bytes año
-    - 1 byte mes
-    - 1 byte dia
-    - Los siguientes bytes, hasta encontrar un cero son el nombre
-    - Los bytes restantes, apellido
+- 1 byte agencia
+- 4 bytes dni
+- 2 bytes numero
+- 2 bytes año
+- 1 byte mes
+- 1 byte dia
+- Los siguientes bytes, hasta encontrar un cero son el nombre
+- Los bytes restantes, apellido
 
 Respuesta del servidor
 
 1 byte:
     - 1, un ACK indicando que la apuesta fue recibida de forma correcta
+
+Para ver el funcionamiento basta con ejecutar 
+
+```console
+$ make docker-compose-up
+```

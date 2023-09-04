@@ -55,6 +55,8 @@ class Server:
 
             bet = decode(payload)
             store_bets([bet])
+            print(
+                f'sent BET: agency: {bet.agency}, name: {bet.first_name}, last name: {bet.last_name}, dni: {bet.document}, birthdate: {bet.birthdate}, number: {bet.number}')
             addr = client_sock.getpeername()
             logging.info(
                 f'action: apuesta_enviada | result: success | ip: {addr[0]} | dni: {bet.document} | numero: {bet.number}')
