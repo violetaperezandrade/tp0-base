@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -90,6 +91,27 @@ func PrintConfig(v *viper.Viper) {
 	)
 }
 
+func betFromRegister(register []string, agency string) bet.Bet {
+
+	firstName := register[0]
+	lastName := register[1]
+	dni, _ := strconv.Atoi(register[2])
+	number, _ := strconv.Atoi(register[4])
+	birthDate, _ := time.Parse("2006-01-02", register[3])
+	agencyId, _ := strconv.Atoi(agency)
+
+	return bet.Bet{
+		Agency:    agencyId,
+		Dni:       dni,
+		Number:    number,
+		Year:      birthDate.Year(),
+		Month:     int(birthDate.Month()),
+		Day:       birthDate.Day(),
+		FirstName: firstName,
+		LastName:  lastName,
+	}
+}
+
 func main() {
 	v, err := InitConfig()
 	if err != nil {
@@ -103,36 +125,55 @@ func main() {
 	// Print program config with debugging purposes
 	PrintConfig(v)
 
+	batchSize, _ := strconv.Atoi(os.Getenv("CHUNK_SIZE"))
+
 	clientConfig := common.ClientConfig{
 		ServerAddress: v.GetString("server.address"),
 		ID:            v.GetString("id"),
 		LoopLapse:     v.GetDuration("loop.lapse"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 		Agency:        os.Getenv("CLI_ID"),
-		Dni:           os.Getenv("DOCUMENTO"),
-		Number:        os.Getenv("NUMERO"),
-		BirthDate:     os.Getenv("NACIMIENTO"),
-		FirstName:     os.Getenv("NOMBRE"),
-		LastName:      os.Getenv("APELLIDO"),
+		BatchSize:     batchSize,
 	}
+	filePath := fmt.Sprintf("/.data/dataset/agency-%s.csv", os.Getenv("CLI_ID"))
+	log.Infof("FILEPATH: %s", filePath)
 
 	client := common.NewClient(clientConfig)
-	agency, _ := strconv.Atoi(clientConfig.Agency)
-	birthdate := clientConfig.BirthDate
-	year, _ := strconv.Atoi(birthdate[1:5])
-	month, _ := strconv.Atoi(birthdate[6:8])
-	day, _ := strconv.Atoi(birthdate[9:11])
-	dni, _ := strconv.Atoi(clientConfig.Dni)
-	number, _ := strconv.Atoi(clientConfig.Number)
-	bet := bet.Bet{
-		Agency:    agency,
-		Dni:       dni,
-		Number:    number,
-		Year:      year,
-		Month:     int(month),
-		Day:       day,
-		FirstName: clientConfig.FirstName,
-		LastName:  clientConfig.LastName,
+	log.Infof("Client created succesfully")
+	var betsList []bet.Bet
+
+	betsParsed := 0
+	batches := 0
+
+	readFile, err := os.Open(filePath)
+
+	if err != nil {
+		log.Error("Error creating reader: %s", err)
 	}
-	client.Send(&bet)
+	fileScanner := bufio.NewScanner(readFile)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	for fileScanner.Scan() {
+		if betsParsed == clientConfig.BatchSize {
+			batches += 1
+			//log.Debugf("Sending batch number %v for agency %v", batches, clientConfig.Agency)
+			client.Send(betsList)
+			betsParsed = 0
+			betsList = []bet.Bet{}
+		}
+		line := fileScanner.Text()
+		register := strings.Split(line, ",")
+		bet := betFromRegister(register, clientConfig.Agency)
+		betsList = append(betsList, bet)
+		betsParsed += 1
+	}
+
+	if len(betsList) != 0 {
+		//log.Debugf("Sending batch number %v for agency %v", batches, clientConfig.Agency)
+		client.Send(betsList)
+
+	}
+
+	readFile.Close()
 }

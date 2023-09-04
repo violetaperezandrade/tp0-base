@@ -17,11 +17,7 @@ type ClientConfig struct {
 	LoopLapse     time.Duration
 	LoopPeriod    time.Duration
 	Agency        string
-	Dni           string
-	Number        string
-	BirthDate     string
-	FirstName     string
-	LastName      string
+	BatchSize     int
 }
 
 // Client Entity that encapsulates how
@@ -56,8 +52,8 @@ func (c *Client) createClientSocket() error {
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) Send(bet *bet.Bet) int {
-	msg := protocol.EncodeBet(bet)
+func (c *Client) Send(bets []bet.Bet) int {
+	msg := protocol.EncodeBets(bets)
 	c.createClientSocket()
 	bytesSent, err := c.conn.Write(msg)
 
@@ -92,10 +88,7 @@ func (c *Client) Send(bet *bet.Bet) int {
 		return 0
 	}
 	if bytesReceived[0] == byte(1) {
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-			bet.Dni,
-			bet.Number,
-		)
+		log.Infof("action: apuesta_enviada | result: success | bets: %d", len(bets))
 		return 1
 	} else {
 		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",

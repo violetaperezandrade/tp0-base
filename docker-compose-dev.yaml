@@ -22,11 +22,7 @@ services:
     environment:
       - CLI_ID=1
       - CLI_LOG_LEVEL=DEBUG
-      - NOMBRE="Santiago Lionel"
-      - APELLIDO="Lorca"
-      - DOCUMENTO=30904465
-      - NACIMIENTO="1999-03-17"
-      - NUMERO=7574
+      - CHUNK_SIZE=80
     networks:
       - testing_net
     depends_on:
@@ -41,21 +37,11 @@ services:
     environment:
       - CLI_ID=2
       - CLI_LOG_LEVEL=DEBUG
-      - NOMBRE="Kylo"
-      - APELLIDO="Ren"
-      - DOCUMENTO=1255978
-      - NACIMIENTO="1989-03-17"
-      - NUMERO=6284
+      - CHUNK_SIZE=90
     networks:
       - testing_net
     depends_on:
       - server
-
-  netcat:
-    container_name: netcat
-    image: netcat:latest
-    networks:
-      - testing_net
 
   client3:
     container_name: client3
@@ -66,11 +52,7 @@ services:
     environment:
       - CLI_ID=3
       - CLI_LOG_LEVEL=DEBUG
-      - NOMBRE="Violeta"
-      - APELLIDO="Perez Andrade"
-      - DOCUMENTO=41181495
-      - NACIMIENTO="1998-05-15"
-      - NUMERO=4517
+      - CHUNK_SIZE=94
     networks:
       - testing_net
     depends_on:
@@ -85,11 +67,7 @@ services:
     environment:
       - CLI_ID=4
       - CLI_LOG_LEVEL=DEBUG
-      - NOMBRE="Carlos Salvador"
-      - APELLIDO="Bilardo"
-      - DOCUMENTO=4275281
-      - NACIMIENTO="1938-03-16"
-      - NUMERO=8716
+      - CHUNK_SIZE=100
     networks:
       - testing_net
     depends_on:
@@ -104,15 +82,17 @@ services:
     environment:
       - CLI_ID=5
       - CLI_LOG_LEVEL=DEBUG
-      - NOMBRE="Julian Fernando"
-      - APELLIDO="Casablancas"
-      - DOCUMENTO=27693906
-      - NACIMIENTO="1978-08-23"
-      - NUMERO=2851
+      - CHUNK_SIZE=105
     networks:
       - testing_net
     depends_on:
       - server
+
+  netcat:
+    container_name: netcat
+    image: netcat:latest
+    networks:
+      - testing_net
 
 networks:
   testing_net:

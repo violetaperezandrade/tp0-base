@@ -2,7 +2,7 @@ import socket
 import logging
 import signal
 
-from protocol.protocol import decode
+from protocol.protocol import decode_bets
 from .utils import store_bets
 
 ACK = 1
@@ -53,13 +53,12 @@ class Server:
             payload = self.__read_exact(int.from_bytes(
                 header, byteorder='big'), client_sock)
 
-            bet = decode(payload)
-            store_bets([bet])
-            print(
-                f'sent BET: agency: {bet.agency}, name: {bet.first_name}, last name: {bet.last_name}, dni: {bet.document}, birthdate: {bet.birthdate}, number: {bet.number}')
+            bets = decode_bets(payload)
+            store_bets(bets)
+            print(f'sent BET: length: {len(bets)}')
             addr = client_sock.getpeername()
-            logging.info(
-                f'action: apuesta_enviada | result: success | ip: {addr[0]} | dni: {bet.document} | numero: {bet.number}')
+            # logging.info(
+            #     f'action: apuesta_enviada | result: success | ip: {addr[0]} | agency: {bets[0].agency}')
             # TODO: Modify the send to avoid short-writes
             client_sock.send(ACK.to_bytes(1, byteorder='big'))
         except OSError as e:

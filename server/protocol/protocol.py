@@ -8,6 +8,20 @@ def decode(payload):
     return STRATEGY_MAP[op_code](payload)
 
 
+def decode_bets(payload):
+    bets = []
+    i = 1
+
+    while i < len(payload):
+
+        bet_len = int.from_bytes(payload[i:i+2], byteorder='big')
+        bet_i = payload[i+2:i+bet_len+2]
+        bets.append(decode_bet_received(bet_i))
+
+        i += bet_len+2
+    return bets
+
+
 def decode_bet_received(payload):
     agency = int(payload[1])
     dni = int.from_bytes(payload[2:6], byteorder='big')
