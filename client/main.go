@@ -158,7 +158,7 @@ func main() {
 		if betsParsed == clientConfig.BatchSize {
 			batches += 1
 			//log.Debugf("Sending batch number %v for agency %v", batches, clientConfig.Agency)
-			client.Send(betsList)
+			client.SendBets(betsList, batches)
 			betsParsed = 0
 			betsList = []bet.Bet{}
 		}
@@ -171,7 +171,7 @@ func main() {
 
 	if len(betsList) != 0 {
 		//log.Debugf("Sending batch number %v for agency %v", batches, clientConfig.Agency)
-		client.Send(betsList)
+		client.SendBets(betsList, batches)
 
 	}
 

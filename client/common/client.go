@@ -52,50 +52,81 @@ func (c *Client) createClientSocket() error {
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) Send(bets []bet.Bet) int {
-	msg := protocol.EncodeBets(bets)
-	c.createClientSocket()
+func (c *Client) SendExact(msg []byte) {
 	bytesSent, err := c.conn.Write(msg)
 
 	if err != nil {
-		log.Error("action: receive_message | result: fail | client_id: %v | error: %v",
+		log.Error("action: send_message | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
 		)
-		return 0
+		return
 	}
 	for bytesSent < len(msg) {
 		newBytesSent, err := c.conn.Write(msg[bytesSent:])
 		bytesSent += newBytesSent
 
 		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
-			return 0
+			return
 		}
 	}
-	bytesReceived := make([]byte, 1)
-	_, err = c.conn.Read(bytesReceived)
-	c.conn.Close()
+
+}
+
+func (c *Client) readExact(amountOfBytesToRead int) []byte {
+	bytesReceived := make([]byte, amountOfBytesToRead)
+	numberOfBytesRead, err := c.conn.Read(bytesReceived)
 
 	if err != nil {
 		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
 		)
-		return 0
+		return bytesReceived
 	}
+	for numberOfBytesRead < amountOfBytesToRead {
+		newBytesRead, err := c.conn.Read(bytesReceived)
+		numberOfBytesRead += newBytesRead
+
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return bytesReceived
+		}
+	}
+
+	return bytesReceived
+}
+
+func (c *Client) retrieveServerACK() {}
+
+func (c *Client) SendBets(bets []bet.Bet, batch_number int) int {
+
+	msg := protocol.EncodeBets(bets)
+
+	c.createClientSocket()
+	c.SendExact(msg)
+
+	c.retrieveServerACK()
+
+	bytesReceived := c.readExact(1)
+
 	if bytesReceived[0] == byte(1) {
-		log.Infof("action: apuesta_enviada | result: success | bets: %d", len(bets))
+		log.Infof("action: apuesta_enviada | result: success | batch_number: %d | bets: %d",
+			batch_number,
+			len(bets),
+		)
 		return 1
 	} else {
-		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: unkown answer",
 			c.config.ID,
-			err,
 		)
 		return 0
 	}
-
 }
