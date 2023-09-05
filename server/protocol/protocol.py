@@ -1,12 +1,22 @@
+import struct
 from common.utils import Bet
 
 
 RECEIVE_BETS_CODE = 1
+SEND_ACK_RECEIVED = 1
+RECEIVE_BET_FINISHED = 2
 
 
 def decode(payload):
-    op_code = int(payload[3])
-    return op_code, STRATEGY_MAP[op_code](payload)
+    if len(payload) > 5:  # batch
+        op_code = int(payload[3])
+    else:
+        op_code = int(payload[0])
+    return op_code, DECODE_MAP[op_code](payload)
+
+
+def encode(op_code):
+    return ENCODE_MAP[op_code]()
 
 
 def decode_bets(payload):
@@ -40,6 +50,22 @@ def decode_bet_received(payload):
     return bet
 
 
-STRATEGY_MAP = {
-    RECEIVE_BETS_CODE: decode_bets
+def decode_bets_end(payload):
+    return int(payload[0])
+
+
+def encode_ack():
+    msg = bytearray(3)
+    struct.pack_into('>H', msg, 0, 1)
+    msg[2] = 2
+    return bytes(msg)
+
+
+DECODE_MAP = {
+    RECEIVE_BETS_CODE: decode_bets,
+    RECEIVE_BET_FINISHED: decode_bets_end
+}
+
+ENCODE_MAP = {
+    SEND_ACK_RECEIVED: encode_ack
 }

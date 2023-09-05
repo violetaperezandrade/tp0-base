@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/binary"
 	"net"
 	"time"
 
@@ -52,7 +53,7 @@ func (c *Client) createClientSocket() error {
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) SendExact(msg []byte) {
+func (c *Client) sendExact(msg []byte) {
 	bytesSent, err := c.conn.Write(msg)
 
 	if err != nil {
@@ -104,28 +105,48 @@ func (c *Client) readExact(amountOfBytesToRead int) []byte {
 	return bytesReceived
 }
 
-func (c *Client) retrieveServerACK() {}
+func (c *Client) retrieveServerACK() int {
+	len_b := c.readExact(2)
+	length := binary.BigEndian.Uint16(len_b)
+	msg := c.readExact(int(length))
+
+	return int(uint64(uint8(msg[0])))
+}
+
+func (c *Client) NotifyBetsSent() int {
+	msg := protocol.EncodeBetsSent()
+	c.createClientSocket()
+	c.sendExact(msg)
+
+	serverACK := c.retrieveServerACK()
+
+	c.conn.Close()
+
+	return serverACK
+}
 
 func (c *Client) SendBets(bets []bet.Bet, batch_number int) int {
 
 	msg := protocol.EncodeBets(bets)
 
 	c.createClientSocket()
-	c.SendExact(msg)
+	c.sendExact(msg)
 
-	c.retrieveServerACK()
+	serverACK := c.retrieveServerACK()
 
-	bytesReceived := c.readExact(1)
+	c.conn.Close()
 
-	if bytesReceived[0] == byte(1) {
+	if serverACK == 2 {
 		log.Infof("action: apuesta_enviada | result: success | batch_number: %d | bets: %d",
 			batch_number,
 			len(bets),
 		)
+
 		return 1
 	} else {
-		log.Errorf("action: receive_message | result: fail | client_id: %v | error: unkown answer",
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: unkown answer: %d",
 			c.config.ID,
+			serverACK,
 		)
 		return 0
 	}

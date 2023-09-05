@@ -11,23 +11,28 @@ Al protocolo del ejercicio anterior se le agrega un header mas. Para enviar un b
     - Header de 2 bytes que indican la longitud del payload
     - 1 byte indicando el codigo de operacion
 
-    Código de operacion 1 --> enviar una apuesta:
-        - 1 byte agencia de la apuesta 1
-        - 4 bytes dni de la apuesta 1
-        - 2 bytes numero de la apuesta 1
-        - 2 bytes año de la apuesta 1
-        - 1 byte mes de la apuesta 1
-        - 1 byte dia de la apuesta 1
-        - Los siguientes bytes, hasta encontrar un cero son el nombre de la apuesta 1
-        - Los bytes restantes, apellido de la apuesta 1
+    Código de operacion 
+        1 --> enviar una apuesta:
+            - 1 byte agencia de la apuesta 1
+            - 4 bytes dni de la apuesta 1
+            - 2 bytes numero de la apuesta 1
+            - 2 bytes año de la apuesta 1
+            - 1 byte mes de la apuesta 1
+            - 1 byte dia de la apuesta 1
+            - Los siguientes bytes, hasta encontrar un cero son el nombre de la apuesta 1
+            - Los bytes restantes, apellido de la apuesta 1
 
-    - Los siguientes dos bytes son el header de la apuesta 2
-    ... etc
+            - El siguiente byte es el codigo de operacion de la apuesta 2
+            ... etc
+        
+        2 --> envio de apuestas finalizado
 
-Respuesta del servidor
+Respuestas del servidor
 
-1 byte:
-    - 1, un ACK indicando que la apuesta fue recibida de forma correcta
+- 2 bytes indicando la longitud del payload(sin contar estos dos bytes):
+
+    - 1 Byte indicando codigo del mensaje:
+        - 2 --> ACK
 
 Para ver el funcionamiento basta con ejecutar 
 

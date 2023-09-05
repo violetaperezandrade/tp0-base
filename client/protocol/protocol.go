@@ -81,3 +81,10 @@ func EncodeBets(bets []bet.Bet) []byte {
 	return batch
 
 }
+
+func EncodeBetsSent() []byte {
+	msg := make([]byte, 3)
+	binary.BigEndian.PutUint16(msg[:2], uint16(1))
+	msg[2] = byte(2)
+	return msg
+}

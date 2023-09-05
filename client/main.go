@@ -156,8 +156,10 @@ func main() {
 	for fileScanner.Scan() {
 		if betsParsed == clientConfig.BatchSize {
 			batches += 1
-			//log.Debugf("Sending batch number %v for agency %v", batches, clientConfig.Agency)
-			client.SendBets(betsList, batches)
+			status := client.SendBets(betsList, batches)
+			if status != 1 {
+				log.Error("action: receive_message | result: fail")
+			}
 			betsParsed = 0
 			betsList = []bet.Bet{}
 		}
@@ -169,10 +171,17 @@ func main() {
 	}
 
 	if len(betsList) != 0 {
-		//log.Debugf("Sending batch number %v for agency %v", batches, clientConfig.Agency)
-		client.SendBets(betsList, batches)
+		status := client.SendBets(betsList, batches)
+		if status != 1 {
+			log.Error("action: receive_message | result: fail")
+		}
 
 	}
 
 	readFile.Close()
+	log.Infof("Finished sendin bets....will notify server")
+	status := client.NotifyBetsSent()
+	if status != 1 {
+		log.Error("action: receive_message | result: fail")
+	}
 }

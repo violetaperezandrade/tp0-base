@@ -2,10 +2,11 @@ import socket
 import logging
 import signal
 
-from protocol.protocol import decode
+from protocol.protocol import decode, encode
 from .utils import store_bets
 
 ACK = 1
+AGENCIES = 5
 
 
 class Server:
@@ -15,9 +16,11 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._running = True
-        self.operations_map = {
-            1: self.store_bets_received
+        self._operations_map = {
+            1: self.__store_bets_received,
+            2: self.__receive_bets_end
         }
+        self._agencies_finished = 0
 
     def run(self):
         """
@@ -56,10 +59,12 @@ class Server:
                 header, byteorder='big'), client_sock)
 
             op_code, data = decode(payload)
-            answer = self.operations_map[op_code](data)
+            answer = self._operations_map.get(op_code, lambda _: None)(data)
+            if answer == None:
+                logging.error(
+                    "action: receive_message | result: fail | error: received unkown operation code")
 
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send(answer.to_bytes(1, byteorder='big'))
+            self.__send_exact(answer, client_sock)
         except OSError as e:
             logging.error(
                 "action: receive_message | result: fail | error: {e}")
@@ -74,6 +79,12 @@ class Server:
             bytes_read += new_bytes_read
 
         return bytes_read
+
+    def __send_exact(self, answer, client_sock):
+        bytes_sent = 0
+        while bytes_sent < len(answer):
+            chunk_size = client_sock.send(answer[bytes_sent:])
+            bytes_sent += chunk_size
 
     def __accept_new_connection(self):
         """
@@ -99,10 +110,16 @@ class Server:
         logging.info(f'action: close_server | result: success')
         return
 
-    def store_bets_received(self, bets):
+    def __store_bets_received(self, bets):
         store_bets(bets)
         print(
             f'sent BET: length: {len(bets)}')
         logging.info(
             f'action: apuesta_enviada | result: success | agency: {bets[0].agency} ')
-        return ACK
+        return encode(ACK)
+
+    def __receive_bets_end(self, op_code):
+        self._agencies_finished += 1
+        logging.info(
+            f'action: received_agency_finished | result: success | agencies finished: {self._agencies_finished}, remaining: {AGENCIES - self._agencies_finished}')
+        return encode(ACK)
