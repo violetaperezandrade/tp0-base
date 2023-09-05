@@ -1,11 +1,12 @@
 from common.utils import Bet
 
-RECEIVE_BET_CODE = 1
+
+RECEIVE_BETS_CODE = 1
 
 
 def decode(payload):
-    op_code = int(payload[0])
-    return STRATEGY_MAP[op_code](payload)
+    op_code = int(payload[3])
+    return op_code, STRATEGY_MAP[op_code](payload)
 
 
 def decode_bets(payload):
@@ -19,6 +20,7 @@ def decode_bets(payload):
         bets.append(decode_bet_received(bet_i))
 
         i += bet_len+2
+
     return bets
 
 
@@ -39,5 +41,5 @@ def decode_bet_received(payload):
 
 
 STRATEGY_MAP = {
-    1: decode_bet_received
+    RECEIVE_BETS_CODE: decode_bets
 }

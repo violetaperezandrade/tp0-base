@@ -2,7 +2,7 @@ import socket
 import logging
 import signal
 
-from protocol.protocol import decode_bets
+from protocol.protocol import decode
 from .utils import store_bets
 
 ACK = 1
@@ -14,7 +14,10 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.running = True
+        self._running = True
+        self.operations_map = {
+            1: self.store_bets_received
+        }
 
     def run(self):
         """
@@ -28,11 +31,11 @@ class Server:
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
         signal.signal(signal.SIGTERM, self.handle_sigterm)
-        while self.running:
+        while self._running:
             try:
                 client_sock = self.__accept_new_connection()
             except OSError:
-                if not self.running:
+                if not self._running:
                     logging.info(f'action: sigterm received')
                 else:
                     raise
@@ -48,19 +51,15 @@ class Server:
         """
         try:
             # TODO: Modify the receive to avoid short-reads
-
             header = self.__read_exact(2, client_sock)
             payload = self.__read_exact(int.from_bytes(
                 header, byteorder='big'), client_sock)
 
-            bets = decode_bets(payload)
-            store_bets(bets)
-            print(f'sent BET: length: {len(bets)}')
-            addr = client_sock.getpeername()
-            # logging.info(
-            #     f'action: apuesta_enviada | result: success | ip: {addr[0]} | agency: {bets[0].agency}')
+            op_code, data = decode(payload)
+            answer = self.operations_map[op_code](data)
+
             # TODO: Modify the send to avoid short-writes
-            client_sock.send(ACK.to_bytes(1, byteorder='big'))
+            client_sock.send(answer.to_bytes(1, byteorder='big'))
         except OSError as e:
             logging.error(
                 "action: receive_message | result: fail | error: {e}")
@@ -96,6 +95,14 @@ class Server:
             f'action: sigterm received | signum: {signum}, frame:{frame}')
         self._server_socket.shutdown(socket.SHUT_RDWR)
         self._server_socket.close()
-        self.running = False
+        self._running = False
         logging.info(f'action: close_server | result: success')
         return
+
+    def store_bets_received(self, bets):
+        store_bets(bets)
+        print(
+            f'sent BET: length: {len(bets)}')
+        logging.info(
+            f'action: apuesta_enviada | result: success | agency: {bets[0].agency} ')
+        return ACK

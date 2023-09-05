@@ -136,7 +136,6 @@ func main() {
 		BatchSize:     batchSize,
 	}
 	filePath := fmt.Sprintf("/.data/dataset/agency-%s.csv", os.Getenv("CLI_ID"))
-	log.Infof("FILEPATH: %s", filePath)
 
 	client := common.NewClient(clientConfig)
 	log.Infof("Client created succesfully")
