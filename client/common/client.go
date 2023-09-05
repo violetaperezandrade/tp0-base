@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/binary"
+	"math/rand"
 	"net"
 	"time"
 
@@ -150,4 +151,38 @@ func (c *Client) SendBets(bets []bet.Bet, batch_number int) int {
 		)
 		return 0
 	}
+}
+
+func (c *Client) AskForWinners(agencyID int) {
+	msg := protocol.EncodeWinnersQuery(agencyID)
+
+	for {
+		c.createClientSocket()
+		// log.Infof("I am in the ask for winners loop")
+		// log.Infof("I will write: %x\n", msg)
+		c.sendExact(msg)
+
+		header := c.readExact(2)
+		length := binary.BigEndian.Uint16(header)
+		//log.Infof("ASK FOR WINNERS: HEADER: %x length: %d", header, length)
+
+		payload := c.readExact(int(length))
+
+		switch payload[0] {
+		case byte(0):
+			c.conn.Close()
+			time.Sleep(time.Duration(rand.Intn(100)+1) * time.Millisecond)
+
+		case byte(3):
+			c.conn.Close()
+			winnersQuantity := protocol.DecodeWinners(payload[1:])
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", winnersQuantity)
+			return
+
+		default:
+			log.Error("action: winners | result: fail | error: unkown answer")
+			c.conn.Close()
+		}
+	}
+
 }

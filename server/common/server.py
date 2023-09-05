@@ -2,8 +2,8 @@ import socket
 import logging
 import signal
 
-from protocol.protocol import decode, encode
-from .utils import store_bets
+from protocol.protocol import decode, encode, encode_winners_not_ready, encode_winners
+from .utils import store_bets, load_bets, has_won
 
 ACK = 1
 AGENCIES = 5
@@ -18,9 +18,11 @@ class Server:
         self._running = True
         self._operations_map = {
             1: self.__store_bets_received,
-            2: self.__receive_bets_end
+            2: self.__receive_bets_end,
+            3: self.__receive_winners_query
         }
         self._agencies_finished = 0
+        self.agencies_finished_anounced = []
 
     def run(self):
         """
@@ -123,3 +125,22 @@ class Server:
         logging.info(
             f'action: received_agency_finished | result: success | agencies finished: {self._agencies_finished}, remaining: {AGENCIES - self._agencies_finished}')
         return encode(ACK)
+
+    def __receive_winners_query(self, agency_id):
+        # print(f'RECEIVE WINNERS QUERY BEING CALLED FROM AGENCY: {agency_id}')
+        # print(f'AAAAND, AGENCIES FINISHED ARE: {self._agencies_finished}')
+        if self._agencies_finished != AGENCIES:
+            return encode_winners_not_ready()
+        else:
+            return self.__get_winners(agency_id)
+
+    def __get_winners(self, agency_id):
+        #print(f'GGET WINNERS BEING CALLED FROM AGENCY: {agency_id}')
+        bets = load_bets()
+        winners = []
+        for bet in bets:
+            if bet.agency == agency_id and has_won(bet):
+                logging.debug(
+                    f"From agency: {agency_id} dni: {bet.document}, winner")
+                winners.append(bet.document)
+        return encode_winners(winners)

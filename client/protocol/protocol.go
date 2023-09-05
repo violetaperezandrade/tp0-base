@@ -88,3 +88,20 @@ func EncodeBetsSent() []byte {
 	msg[2] = byte(2)
 	return msg
 }
+
+func EncodeWinnersQuery(agencyID int) []byte {
+	msg := make([]byte, 4)
+	binary.BigEndian.PutUint16(msg[:2], uint16(2))
+	msg[2] = byte(3)
+	msg[3] = byte(agencyID)
+	//log.Infof("Gretings from the client protocol, I am sendingg msg: %x\n", msg)
+	return msg
+
+}
+
+func DecodeWinners(winners []byte) int {
+	winnersQuantity := int(binary.BigEndian.Uint16(winners[:2]))
+	//log.Infof("Gretings from the client protocol, I am getting winner quantity: %d", winnersQuantity)
+
+	return winnersQuantity
+}

@@ -1,9 +1,13 @@
-### Ejercicio N°6:
-Modificar los clientes para que envíen varias apuestas a la vez (modalidad conocida como procesamiento por _chunks_ o _batchs_). La información de cada agencia será simulada por la ingesta de su archivo numerado correspondiente, provisto por la cátedra dentro de `.data/datasets.zip`.
-Los _batchs_ permiten que el cliente registre varias apuestas en una misma consulta, acortando tiempos de transmisión y procesamiento. La cantidad de apuestas dentro de cada _batch_ debe ser configurable.
-El servidor, por otro lado, deberá responder con éxito solamente si todas las apuestas del _batch_ fueron procesadas correctamente.
+### Ejercicio N°7:
+Modificar los clientes para que notifiquen al servidor al finalizar con el envío de todas las apuestas y así proceder con el sorteo.
+Inmediatamente después de la notificacion, los clientes consultarán la lista de ganadores del sorteo correspondientes a su agencia.
+Una vez el cliente obtenga los resultados, deberá imprimir por log: `action: consulta_ganadores | result: success | cant_ganadores: ${CANT}`.
 
-Al protocolo del ejercicio anterior se le agrega un header mas. Para enviar un batch:
+El servidor deberá esperar la notificación de las 5 agencias para considerar que se realizó el sorteo e imprimir por log: `action: sorteo | result: success`.
+Luego de este evento, podrá verificar cada apuesta con las funciones `load_bets(...)` y `has_won(...)` y retornar los DNI de los ganadores de la agencia en cuestión. Antes del sorteo, no podrá responder consultas por la lista de ganadores.
+Las funciones `load_bets(...)` y `has_won(...)` son provistas por la cátedra y no podrán ser modificadas por el alumno.
+
+Al protocolo del ejercicio anterior se le agregan mas mensajes.
 
 - Header de 2 bytes que indica la longitud, en bytes, del batch(sin contar el header)
 - 1 Byte indicando la cantidad de apuestas en el batch
@@ -26,13 +30,18 @@ Al protocolo del ejercicio anterior se le agrega un header mas. Para enviar un b
             ... etc
         
         2 --> envio de apuestas finalizado
+        3 --> consultar ganadores
+            1 byte: agencia
 
 Respuestas del servidor
 
 - 2 bytes indicando la longitud del payload(sin contar estos dos bytes):
 
-    - 1 Byte indicando codigo del mensaje:
+     - 1 Byte indicando codigo del mensaje:
+        - 0 --> Aun no hay ganadores
         - 2 --> ACK
+        - 3 --> ganadores
+            - 2 bytes: cantidad de ganadores
 
 Para ver el funcionamiento basta con ejecutar 
 

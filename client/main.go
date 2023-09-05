@@ -179,9 +179,13 @@ func main() {
 	}
 
 	readFile.Close()
-	log.Infof("Finished sendin bets....will notify server")
+	//log.Infof("Finished sendin bets....will notify server")
 	status := client.NotifyBetsSent()
 	if status != 1 {
 		log.Error("action: receive_message | result: fail")
 	}
+
+	agency, _ := strconv.Atoi(clientConfig.Agency)
+
+	client.AskForWinners(agency)
 }
