@@ -140,7 +140,10 @@ class Server:
         winners = []
         for bet in bets:
             if bet.agency == agency_id and has_won(bet):
-                logging.debug(
-                    f"From agency: {agency_id} dni: {bet.document}, winner")
+                # logging.debug(
+                #     f"From agency: {agency_id} dni: {bet.document}, winner")
                 winners.append(bet.document)
+        # logging.debug(
+        #     f"From agency: {agency_id} I will tell you the winners")
+        # print(winners)
         return encode_winners(winners)

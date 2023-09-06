@@ -41,7 +41,9 @@ Respuestas del servidor
         - 0 --> Aun no hay ganadores
         - 2 --> ACK
         - 3 --> ganadores
-            - 2 bytes: cantidad de ganadores
+            - primeros 4 bytes DNI ganador 1
+            - siguientes 4 bytes DNI ganador 2
+            ...
 
 Para ver el funcionamiento basta con ejecutar 
 

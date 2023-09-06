@@ -158,13 +158,10 @@ func (c *Client) AskForWinners(agencyID int) {
 
 	for {
 		c.createClientSocket()
-		// log.Infof("I am in the ask for winners loop")
-		// log.Infof("I will write: %x\n", msg)
 		c.sendExact(msg)
 
 		header := c.readExact(2)
 		length := binary.BigEndian.Uint16(header)
-		//log.Infof("ASK FOR WINNERS: HEADER: %x length: %d", header, length)
 
 		payload := c.readExact(int(length))
 
@@ -176,6 +173,11 @@ func (c *Client) AskForWinners(agencyID int) {
 		case byte(3):
 			c.conn.Close()
 			winnersQuantity := protocol.DecodeWinners(payload[1:])
+			if winnersQuantity == -1 {
+				log.Error("action: winners | result: fail | error: unkown answer")
+				c.conn.Close()
+				return
+			}
 			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", winnersQuantity)
 			return
 

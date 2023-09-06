@@ -100,8 +100,18 @@ func EncodeWinnersQuery(agencyID int) []byte {
 }
 
 func DecodeWinners(winners []byte) int {
-	winnersQuantity := int(binary.BigEndian.Uint16(winners[:2]))
-	//log.Infof("Gretings from the client protocol, I am getting winner quantity: %d", winnersQuantity)
+	if len(winners)%4 != 0 { // cantidad de bytes desconocida
+		return -1
+	}
+
+	var dnis []int
+	for i := 0; i < len(winners); i += 4 {
+		dniBytes := winners[i : i+4]
+		dni := int(binary.BigEndian.Uint32(dniBytes))
+		dnis = append(dnis, dni)
+	}
+
+	winnersQuantity := len(dnis)
 
 	return winnersQuantity
 }

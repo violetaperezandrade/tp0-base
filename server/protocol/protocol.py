@@ -77,18 +77,19 @@ def encode_winners_not_ready():
 
 
 def encode_winners(winners):
-    num_winners = len(winners)
-    byte_count = 2 + 1 + 2  # 2 bytes header, 1 cod_op, 2 num_winners
-    msg = bytearray(byte_count)
+    total_len = 1 + len(winners)*4  # 1 byte de opcode + 4 bytes de cada dni
 
-    header = 3
-    msg[0:2] = header.to_bytes(2, byteorder='big')
+    msg = bytearray(total_len + 2)  # los 2 bytes de header
+    msg[0:2] = total_len.to_bytes(2, byteorder='big')  # header
 
     op_code = 3
     msg[2:3] = op_code.to_bytes(1, byteorder='big')
 
-    # ultimos dos bytes cantidad de ganadores
-    msg[3:5] = num_winners.to_bytes(2, byteorder='big')
+    i = 3
+    for dni in winners:
+        msg[i:i+4] = int(dni).to_bytes(4, byteorder='big')
+        i += 4
+
     return msg
 
 
