@@ -2,7 +2,8 @@ import socket
 import logging
 import signal
 from time import sleep
-from threading import Thread, Lock
+from threading import Lock
+from multiprocessing.pool import ThreadPool
 
 from protocol.protocol import decode, encode, encode_winners_not_ready, encode_winners
 from .utils import store_bets, load_bets, has_won
@@ -26,6 +27,7 @@ class Server:
         self._agencies_finished = 0
         self.agencies_finished_anounced = []
         self.__lock = Lock()
+        self.__file_lock = Lock()
 
     def run(self):
         """
@@ -36,9 +38,7 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
-        threads = [Thread(target=lambda: None) for _ in range(5)]
+        pool = ThreadPool(processes=5)
         signal.signal(signal.SIGTERM, self.handle_sigterm)
         while self._running:
             try:
@@ -49,19 +49,9 @@ class Server:
                 else:
                     raise
                 return
-            thread = Thread(target=self.__handle_client_connection,
-                            args=(client_sock, ))
-            self.handle_new_thread(threads, thread)
-        for thread in threads:
-            thread.join()
-
-    def handle_new_thread(self, threads, new_thread):
-        while True:
-            for i, thread in enumerate(threads):
-                if not thread.is_alive():
-                    threads[i] = new_thread
-                    threads[i].start()
-                    return
+            pool.apply_async(self.__handle_client_connection, (client_sock, ))
+        pool.close()
+        pool.join()
 
     def __handle_client_connection(self, client_sock):
         """
@@ -71,7 +61,6 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
             header = self.__read_exact(2, client_sock)
             payload = self.__read_exact(int.from_bytes(
                 header, byteorder='big'), client_sock)
@@ -129,7 +118,7 @@ class Server:
         return
 
     def __store_bets_received(self, bets):
-        with self.__lock:
+        with self.__file_lock:
             # logging.debug("Locking!")
             # sleep(7)
             store_bets(bets)
@@ -141,7 +130,8 @@ class Server:
         return encode(ACK)
 
     def __receive_bets_end(self, op_code):
-        self._agencies_finished += 1
+        with self.__lock:
+            self._agencies_finished += 1
         logging.info(
             f'action: received_agency_finished | result: success | agencies finished: {self._agencies_finished}, remaining: {AGENCIES - self._agencies_finished}')
         return encode(ACK)

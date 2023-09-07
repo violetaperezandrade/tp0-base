@@ -13,3 +13,5 @@ Para ver el funcionamiento basta con ejecutar
 ```console
 $ make docker-compose-up
 ```
+
+La explicacion de cada ejercicio se puede encontrar en el readme de la branch ej_numEjercicio

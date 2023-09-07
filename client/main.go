@@ -181,7 +181,7 @@ func main() {
 	readFile.Close()
 	//log.Infof("Finished sendin bets....will notify server")
 	status := client.NotifyBetsSent()
-	if status != 1 {
+	if status != 2 {
 		log.Error("action: receive_message | result: fail")
 	}
 
