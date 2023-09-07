@@ -52,6 +52,8 @@ class Server:
             thread = Thread(target=self.__handle_client_connection,
                             args=(client_sock, ))
             self.handle_new_thread(threads, thread)
+        for thread in threads:
+            thread.join()
 
     def handle_new_thread(self, threads, new_thread):
         while True:
