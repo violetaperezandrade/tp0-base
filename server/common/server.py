@@ -1,6 +1,8 @@
 import socket
 import logging
 import signal
+from time import sleep
+from threading import Thread, Lock
 
 from protocol.protocol import decode, encode, encode_winners_not_ready, encode_winners
 from .utils import store_bets, load_bets, has_won
@@ -23,6 +25,7 @@ class Server:
         }
         self._agencies_finished = 0
         self.agencies_finished_anounced = []
+        self.__lock = Lock()
 
     def run(self):
         """
@@ -35,6 +38,7 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
+        threads = [Thread(target=lambda: None) for _ in range(5)]
         signal.signal(signal.SIGTERM, self.handle_sigterm)
         while self._running:
             try:
@@ -45,7 +49,17 @@ class Server:
                 else:
                     raise
                 return
-            self.__handle_client_connection(client_sock)
+            thread = Thread(target=self.__handle_client_connection,
+                            args=(client_sock, ))
+            self.handle_new_thread(threads, thread)
+
+    def handle_new_thread(self, threads, new_thread):
+        while True:
+            for i, thread in enumerate(threads):
+                if not thread.is_alive():
+                    threads[i] = new_thread
+                    threads[i].start()
+                    return
 
     def __handle_client_connection(self, client_sock):
         """
@@ -61,7 +75,7 @@ class Server:
                 header, byteorder='big'), client_sock)
 
             op_code, data = decode(payload)
-            answer = self._operations_map.get(op_code, lambda _: None)(data)
+            answer = self._operations_map.get(op_code, None)(data)
             if answer == None:
                 logging.error(
                     "action: receive_message | result: fail | error: received unkown operation code")
@@ -113,7 +127,11 @@ class Server:
         return
 
     def __store_bets_received(self, bets):
-        store_bets(bets)
+        with self.__lock:
+            # logging.debug("Locking!")
+            # sleep(7)
+            store_bets(bets)
+            # logging.debug("Unlocking!")
         print(
             f'sent BET: length: {len(bets)}')
         logging.info(
